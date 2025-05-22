@@ -1,0 +1,5 @@
+{
+  "name": "Calculadora de Tarifa Freelance",
+  "description": "Una aplicación para ayudar a freelancers a calcular su tarifa por hora justa, basada en su perfil, país y sector.",
+  "requestFramePermissions": []
+}
