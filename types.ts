@@ -44,6 +44,7 @@ export interface CalculatedRates {
   tshMinimaEtica: number;
   tshSugerida: number;
   tshPremium?: number;
+  marketInsight?: string; // For the new AI function
 }
 
 export enum AppScreen {
@@ -136,4 +137,37 @@ export interface ClientRateEstimate {
 export interface DataSources {
   name: string;
   url?: string;
+}
+
+// Types for AI Functions
+export interface HistorialTarifaEntry {
+  spt: number;
+  sector: string;
+  pais: string;
+  tarifa_resultado: number;
+}
+
+export interface HistorialUsuarioEntry {
+  // Define structure based on what you'd store for user's past rates
+  fecha: string;
+  sptCalculado: number;
+  tarifaSugerida: number;
+  phMinimoUsado: number;
+  phMedioUsado: number;
+}
+
+// Type for Google Sheets Webhook Payload
+export interface SheetDataPayload {
+  pais: string;
+  sector: string;
+  spt: number;
+  tshSugerida: number;
+  tshMinima: number;
+  tshPremium?: number; // Optional as it's not always present
+  historial: string; // Assuming this is a text summary
+  resultados: boolean; // Assuming this tracks if results were shown
+  usoSimulador: boolean;
+  usoMicrolecciones: boolean;
+  timestamp?: string; // Optional: good practice to add a timestamp
+  userRole?: UserRole; // Optional: to know if it's a freelancer or client
 }

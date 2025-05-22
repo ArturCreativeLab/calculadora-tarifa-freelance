@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // Fix: Import ClientProjectVolume
-import { AppScreen, UserData, CalculatedRates, Country, Sector, UserRole, ClientInputData, ClientRateEstimate, ClientExperienceLevel, ClientProjectUrgency, ClientProjectVolume } from './types';
+import { AppScreen, UserData, CalculatedRates, Country, Sector, UserRole, ClientInputData, ClientRateEstimate, ClientExperienceLevel, ClientProjectUrgency, ClientProjectVolume, HistorialTarifaEntry, HistorialUsuarioEntry } from './types';
 import { 
   COUNTRIES_DATA, 
   SECTORS_DATA, 
   AVERAGE_HOURLY_RATES_DATA, 
   QUIZ_QUESTIONS_DATA, 
-  HOURS_PER_MONTH_REFERENCE, 
+  // HOURS_PER_MONTH_REFERENCE, // Now used from aiFunctions
   MAIN_APP_TITLE,
   ARTUR_LAB_NAME,
   APP_FOOTER_MESSAGE,
@@ -14,6 +14,13 @@ import {
   CLIENT_URGENCY_MULTIPLIERS,
   DEFAULT_CLIENT_ESTIMATED_HOURS
 } from './constants';
+import {
+  calcular_ph_minimo,
+  calcular_tarifa_sugerida,
+  generar_insight_mercado, // Will be used in ResultsDisplay but logic is here
+  predecir_tarifa_optima,
+  ajustar_por_historial
+} from './lib/aiFunctions';
 import RoleSelectionScreen from './components/RoleSelectionScreen';
 import WelcomeScreen from './components/WelcomeScreen'; // Freelancer Welcome
 import CountrySectorForm from './components/CountrySectorForm'; // Freelancer Country/Sector
@@ -56,11 +63,12 @@ const App: React.FC = () => {
     const country = COUNTRIES_DATA.find(c => c.code === freelancerUserData.countryCode) as Country; 
     const sector = SECTORS_DATA.find(s => s.id === freelancerUserData.sectorId) as Sector; 
 
-    const phMinimo = country.minMonthlySalary / HOURS_PER_MONTH_REFERENCE;
+    // Use AI Function for PH Minimo
+    const phMinimo = calcular_ph_minimo(country.minMonthlySalary);
 
     const rateKey = `${country.code}_${sector.id}`;
     const phMedioFallbackForCountry = AVERAGE_HOURLY_RATES_DATA[`${country.code}_other`]; 
-    const genericFallback = phMinimo * 2; 
+    const genericFallback = phMinimo * 2; // Fallback if no specific PH Medio is found
     const phMedio = AVERAGE_HOURLY_RATES_DATA[rateKey] || phMedioFallbackForCountry || genericFallback;
 
     const rawSpt = Object.values(freelancerUserData.quizAnswers).reduce((sum, points) => sum + points, 0);
@@ -72,21 +80,31 @@ const App: React.FC = () => {
 
     const normalizedSpt = maxPossiblePoints > 0 ? (rawSpt / maxPossiblePoints) * 100 : 0;
     const finalSpt = Math.max(0, Math.min(100, Math.round(normalizedSpt)));
+    
+    // Call placeholder AI functions
+    const prediccion = predecir_tarifa_optima(finalSpt, sector.name, country.name);
+    // const historialAjuste = ajustar_por_historial(finalSpt); // Needs actual historialUsuario
 
-    const effectivePhMedio = Math.max(phMinimo, phMedio);
-    const tsh = phMinimo + ((effectivePhMedio - phMinimo) * (finalSpt / 100));
+    // Use AI Function for TSH Sugerida
+    // Apply predictive adjustment (placeholder: currently small or no effect)
+    let tshSugeridaBase = calcular_tarifa_sugerida(phMinimo, phMedio, finalSpt);
+    const tshSugerida = tshSugeridaBase * (1 + prediccion.ajusteSugerido); // Apply adjustment
+    // tshSugerida *= historialAjuste.factorAjuste; // Apply history adjustment if available
+
+    const marketInsightText = generar_insight_mercado(phMedio, finalSpt, sector.name, country.name, phMinimo, tshSugerida, country.currencySymbol);
     
     const rates: CalculatedRates = {
       phMinimo,
-      phMedio: effectivePhMedio,
+      phMedio: Math.max(phMinimo, phMedio), // Ensure phMedio is not less than phMinimo
       spt: finalSpt, 
-      tsh,
+      tsh: tshSugerida, // Original TSH from formula for consistency if needed elsewhere
       tshMinimaEtica: phMinimo,
-      tshSugerida: tsh,
+      tshSugerida: tshSugerida,
+      marketInsight: marketInsightText,
     };
 
     if (rates.spt > 89) {
-      rates.tshPremium = tsh * 1.25;
+      rates.tshPremium = rates.tshSugerida * 1.25;
     }
     
     setCalculatedFreelancerRates(rates);
@@ -105,7 +123,9 @@ const App: React.FC = () => {
       return;
     }
     
-    const phMinimoEthical = country.minMonthlySalary / HOURS_PER_MONTH_REFERENCE;
+    // Use AI function for PH Minimo
+    const phMinimoEthical = calcular_ph_minimo(country.minMonthlySalary);
+    
     const baseRateKey = `${country.code}_${sector.id}`;
     const phMedioMarketFallback = AVERAGE_HOURLY_RATES_DATA[`${country.code}_other`] || phMinimoEthical * 2;
     const phMedioMarket = AVERAGE_HOURLY_RATES_DATA[baseRateKey] || phMedioMarketFallback;
@@ -117,7 +137,7 @@ const App: React.FC = () => {
     const maxRate = phMedioMarket * expLevelFactors.multiplierMax;
 
     let totalEstimatedCost;
-    let costExplanation = '';
+    // let costExplanation = ''; // Removed as it's not directly used for display in this way
 
     // Basic cost estimation logic (can be expanded)
     const baseHours = clientInputData.estimatedHoursPerTask || (clientInputData.volume === ClientProjectVolume.ONE_TASK ? DEFAULT_CLIENT_ESTIMATED_HOURS : DEFAULT_CLIENT_ESTIMATED_HOURS * 2); // Simplistic volume adjustment

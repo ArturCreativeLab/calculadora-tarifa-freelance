@@ -9,7 +9,7 @@ import {
   PLATFORM_EXAMPLES_BY_SECTOR, 
   NEW_QUESTION_ID, 
   MAX_PLATFORM_EXAMPLES,
-  AVERAGE_HOURLY_RATES_DATA,
+  // AVERAGE_HOURLY_RATES_DATA, // No longer directly used here for market comparison
   HOURS_PER_MONTH_REFERENCE,
   MICRO_LESSONS_DATA,
   SIMILAR_PROJECTS_HOURS_WARNING_THRESHOLD,
@@ -17,6 +17,7 @@ import {
 } from '../constants';
 import Button from './ui/Button';
 import Card from './ui/Card';
+// generar_insight_mercado is now called in App.tsx and result passed via rates.marketInsight
 
 interface ResultsDisplayProps {
   rates: CalculatedRates | null;
@@ -146,6 +147,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
       report += `- Tarifa Premium (Potencial): ${formatCurrency(rates.tshPremium, true)}\n`;
     }
     report += `\nReferencia de Mercado (PH Medio para tu sector/país): ${formatCurrency(rates.phMedio, true)}\n\n`;
+    if(rates.marketInsight){
+        report += `INSIGHT DE MERCADO PERSONALIZADO:\n${rates.marketInsight}\n\n`;
+    }
 
     if(showProjectSimulator && projectSimResult) {
         report += `SIMULACIÓN DE PROYECTO:\n`;
@@ -168,18 +172,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
   
   const spainMarketInfo = country.code === 'ES' ? `En España, para tu sector "${sector.name}", usamos una PH_medio de ${formatCurrency(rates.phMedio)}. Estos valores son estimaciones actualizadas.` : "";
 
-  const marketComparisonText = () => {
-    if (rates.phMedio <= 0) return "";
-    const diff = ((rates.tshSugerida - rates.phMedio) / rates.phMedio) * 100;
-    if (diff > 5) return `¡Excelente! Tu tarifa sugerida está un ${diff.toFixed(0)}% por encima del promedio de tu mercado (${formatCurrency(rates.phMedio)}).`;
-    if (diff < -5) return `Tu tarifa sugerida está un ${Math.abs(diff).toFixed(0)}% por debajo del promedio (${formatCurrency(rates.phMedio)}). ¡Potencial de crecimiento!`;
-    return `Tu tarifa sugerida está alineada con el promedio de tu mercado (${formatCurrency(rates.phMedio)}).`;
-  };
-
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-8">
       <Card title="¡Tu Cálculo de Tarifa Freelance!" icon="🎉">
-        {/* ... (Profile Info, Mentor Message - same as before) ... */}
         <div className="mb-6 p-4 bg-slate-50 rounded-lg">
           <p className="text-sm text-slate-500">Tu especialidad:</p>
           <p className="text-xl font-semibold text-sky-700">{sector.name}</p>
@@ -194,7 +189,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 mb-2 text-center">
-          {/* ... (Rate cards - TSH Minima, Sugerida, Premium - same as before) ... */}
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
             <h4 className="text-sm font-semibold text-green-700 mb-1">💡 Tarifa Mínima Ética</h4>
             <p className="text-2xl font-bold text-green-600">{formatCurrency(rates.tshMinimaEtica)}</p>
@@ -213,7 +207,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
             </div>
           )}
         </div>
-        <p className="text-sm font-medium text-center mt-1">{marketComparisonText()}</p>
+        {rates.marketInsight && (
+          <p className="text-sm text-slate-600 bg-blue-50 p-3 rounded-md border border-blue-200 my-4">
+            <strong>Insight de Mercado:</strong> {rates.marketInsight}
+          </p>
+        )}
         <p className="text-xs text-center text-slate-500 mt-3 mb-2">
           La Mínima Ética considera el costo de vida en {country.name}. La Sugerida refleja tu perfil y el PH_medio ({formatCurrency(rates.phMedio)}) de tu mercado.
           {rates.tshPremium && ` La Premium es para perfiles ${sptLevel.level} (SPT > 89).`} {spainMarketInfo}
@@ -262,7 +260,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
       </Card>
 
       <Card title="Próximos Pasos y Recomendaciones" icon="🧭">
-         {/* ... (Recommendations - same as before) ... */}
         <ul className="space-y-3 list-disc list-inside text-slate-600 mb-6">
           {finalRecommendations.map((rec, index) => (
             <li key={index}>{rec}</li>
@@ -304,7 +301,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
 
 
       <Card title="¿Cómo calculamos tu tarifa?" icon="💡" className="bg-slate-50">
-        {/* ... (Educational Content - same as before, but maybe add sources link) ... */}
         <details>
           <summary className="font-semibold text-sky-700 cursor-pointer hover:underline">
             Entiende la lógica detrás de los números (¡sin magia!)
@@ -331,7 +327,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
       </Card>
       
       <div className="text-center space-y-4 md:space-y-0 md:flex md:justify-center md:space-x-4">
-        {/* ... (Action Buttons - Copiar Informe, Cambiar Config, Repetir Test - same as before) ... */}
          <Button onClick={() => copyToClipboard(generateReportText(), "¡Informe detallado copiado al portapapeles!")} variant="outline" className="w-full md:w-auto">
           📋 Copiar Informe Detallado
         </Button>
