@@ -317,7 +317,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ rates, countryCode, sec
             <p className="font-semibold mt-2">La Fórmula (Simplificada):</p>
             <p><code>Tu Tarifa Sugerida = PH_mínimo + ((PH_medio - PH_mínimo) × (Tu SPT / 100))</code></p>
             <p>Partimos de tu PH_mínimo y sumamos una porción de la diferencia entre el PH_medio y tu PH_mínimo, según tu SPT. Si tu SPT es alto, tu tarifa se acerca más al PH_medio.</p>
-            <p><strong>⚠️ Nunca por debajo del mínimo:</strong> Cobrar bajo tu Tarifa Mínima Ética (<span>{formatCurrency(rates.tshMinimaEtica)}</span>) puede ser insostenible.</p>
+            <p><strong>⚠️ Nunca por debajo del mínimo:</strong> Cobrar bajo tu Tarifa Mínima Ética ({formatCurrency(rates.tshMinimaEtica)}) puede ser insostenible.</p>
             <p><strong>🚀 Hacia la Tarifa Premium:</strong> Si tu perfil es excepcional (SPT > 89), como el tuyo ({rates.spt}/100), puedes aspirar a +25% sobre tu Tarifa Sugerida.</p>
             <div className="mt-4 pt-3 border-t">
               <h5 className="font-semibold text-slate-700">Fuentes de Datos de Referencia:</h5>
